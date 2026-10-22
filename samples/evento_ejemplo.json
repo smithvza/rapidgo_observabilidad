@@ -1,0 +1,10 @@
+{
+  "event_id": "a3f1c9e2-7b44-4d1a-9c0e-52b1f8d6e001",
+  "timestamp": "2026-10-22T14:35:10.123Z",
+  "service": "orders-api",
+  "endpoint": "/v1/orders",
+  "http_method": "POST",
+  "http_status": 500,
+  "latency_ms": 1240,
+  "region": "co-bogota"
+}  
