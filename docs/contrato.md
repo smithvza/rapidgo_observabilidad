@@ -1,4 +1,4 @@
-# Contrato del evento - RapidGo Observabilidad (Variante 9)
+S# Contrato del evento - RapidGo Observabilidad (Variante 9)
 
 **Archivos relacionados:**
 - `samples/evento_ejemplo.json` (evento válido con error)
