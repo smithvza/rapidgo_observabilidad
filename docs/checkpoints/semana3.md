@@ -21,14 +21,18 @@ usar una ruta aislada para el fallo y después correr la recuperación con la
 ruta normal (PowerShell):
 
 ```powershell
+python -m pip install -r requirements.txt
+docker compose up -d --build
+docker compose exec airflow airflow dags list
 $failDate = (Get-Date).ToUniversalTime().AddMinutes(-2).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
 docker compose exec -T -e DATALAKE_PATH=/tmp/rapidgo-empty airflow airflow dags test rapidgo_observability_pipeline $failDate
-docker compose up -d --build airflow
-docker compose exec -d spark /opt/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3 --conf spark.jars.ivy=/tmp/.ivy /opt/app/spark/streaming_job.py
+docker compose exec -d spark /bin/bash -c 'timeout 420s /opt/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3 --conf spark.jars.ivy=/tmp/.ivy /opt/app/spark/streaming_job.py > /tmp/rapidgo-spark-week3.log 2>&1'
 python -m producer.rapidgo_producer --rate 20 --duration 210 --incident-every 0
+docker compose exec airflow python -c "import sys; sys.path.insert(0, '/opt/airflow/dags'); import rapidgo_checks as c; print(c.check_sources())"
 $recoveryDate = (Get-Date).ToUniversalTime().AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
 docker compose exec airflow airflow dags test rapidgo_observability_pipeline $recoveryDate
 ```
 
 La corrida fallida devuelve código 1 por diseño. Esperar a que existan Parquet
-en las tres capas antes de iniciar la corrida de recuperación.
+en las tres capas antes de iniciar la corrida de recuperación. El proceso de
+Spark se limita a 420 s para no dejar un stream de demostración indefinido.
