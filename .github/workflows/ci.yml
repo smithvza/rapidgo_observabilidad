@@ -48,8 +48,7 @@ jobs:
           cache: pip
       - name: Install Airflow test dependencies
         run: |
-          python -m pip install "apache-airflow==2.10.5" \
+          python -m pip install "apache-airflow==2.10.5" pytest \
             --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
-          python -m pip install pytest
       - name: Validate Airflow DAG
         run: python -m pytest -v tests/test_dag_integrity.py
