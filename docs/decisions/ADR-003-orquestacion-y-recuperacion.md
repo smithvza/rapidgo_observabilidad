@@ -1,6 +1,6 @@
 # ADR-003 - Orquestación y recuperación ante fallos
 
-**Estado:** Pendiente — falta el DAG y una ejecución observada  
+**Estado:** Pendiente — falta el DAG y una ejecución observada
 **Issues relacionados:** [#15 DAG de Airflow](https://github.com/smithvza/rapidgo_observabilidad/issues/15),
 [#17 fallo controlado](https://github.com/smithvza/rapidgo_observabilidad/issues/17)
 

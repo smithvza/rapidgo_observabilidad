@@ -1,6 +1,6 @@
 # Checkpoint Semana 3 — fallo controlado
 
-**Estado:** BLOQUEADO — ejecución pendiente  
+**Estado:** BLOQUEADO — ejecución pendiente
 **Issues:** [#15 DAG de Airflow](https://github.com/smithvza/rapidgo_observabilidad/issues/15),
 [#17 fallo controlado](https://github.com/smithvza/rapidgo_observabilidad/issues/17)
 
