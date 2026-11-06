@@ -1,48 +1,34 @@
-# Checkpoint Semana 3 — fallo controlado
+# Checkpoint Semana 3 — fallo controlado y recuperación
 
-**Estado:** BLOQUEADO — ejecución pendiente
+**Estado:** Ejecutado en Docker Desktop · **DAG:** `rapidgo_observability_pipeline`
 **Issues:** [#15 DAG de Airflow](https://github.com/smithvza/rapidgo_observabilidad/issues/15),
 [#17 fallo controlado](https://github.com/smithvza/rapidgo_observabilidad/issues/17)
 
-| Dato requerido | Evidencia |
+| Evidencia | Resultado real |
 |---|---|
-| Tarea fallida | **PENDIENTE:** no hay DAG Python en `airflow/dags/`; solo existe `.gitkeep`. |
-| Mensaje real del log | **PENDIENTE:** no se ejecutó una tarea. No se inventa un log. |
-| Tareas afectadas / impacto | **PENDIENTE:** la secuencia real de tareas aún no está versionada. |
-| Cambio que resolvió el fallo | **PENDIENTE:** requiere el DAG de Javier y una recuperación exitosa observada. |
+| Fallo | Airflow 2.10.5, corrida `manual__2026-11-05T00:00:00+00:00`: falló `check_sources` al encontrar el Data Lake vacío. Log: `rapidgo_checks.DataNotReadyError: Sin archivos Parquet en: raw, processed, curated (ruta /opt/airflow/datalake). Revisar que el job de Spark este corriendo; curated tarda en aparecer porque cada ventana se cierra con el watermark de 2 minutos.` |
+| Reintentos e impacto | 3 intentos (2 retries, 30 s). `check_sources=failed`; `quality_check`, `partition_distribution`, `aggregate_kpis`, `evaluate_alerts` y `publish_report=upstream_failed`. No se publicó reporte. |
+| Recuperación | Producer: 3.763 enviados, 0 inválidos, 0 errores de entrega. Spark registró `Queries activas: ['raw', 'processed', 'curated']`; se escribieron Parquet en las tres capas. Nueva corrida `manual__2026-11-06T02:06:00+00:00`: las 6 tareas terminaron `success`. |
+| Verificación | `quality_check`: 3.763 filas, 0 inválidas, 0 duplicadas. `publish_report` escribió `datalake/reports/kpi_report_20261106T020748Z.md` y JSON; la corrida fue `success`, 0 alertas. |
 
-`docker-compose.yml` solo define Kafka, `kafka-init` y Spark (no Airflow). En
-esta sesión Docker informó `Docker Desktop is unable to start`, por lo que no
-se provocó un fallo ni se registró una recuperación. El método de inyección
-(Kafka detenido o raw vacío) queda pendiente de revisar contra las tareas
-reales; no se modificó el trabajo de Javier ni se escribió un DAG.
-
-Para recolectar evidencia cuando exista el DAG y un entorno Airflow en WSL2,
-inicializar Airflow (Python 3.13; versión probada oficialmente por Airflow
-3.1.3):
-
-```bash
-set -o pipefail
-python3.13 -m venv /tmp/rapidgo-airflow-venv
-source /tmp/rapidgo-airflow-venv/bin/activate
-python -m pip install "apache-airflow==3.1.3" "apache-airflow-providers-standard" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.1.3/constraints-3.13.txt"
-export AIRFLOW_HOME=/tmp/rapidgo-airflow
-export AIRFLOW__CORE__DAGS_FOLDER="$PWD/airflow/dags"
-airflow db migrate
-docker compose up -d
-airflow dags list
-DAG_ID="REEMPLAZAR_CON_EL_ID_REAL"
-airflow dags test "$DAG_ID" "2026-11-06T00:00:00+00:00" 2>&1 | tee semana3-fallo.log
-```
-
-Después de corregir la causa, ejecutar con una fecha lógica nueva y conservar
-su salida. Reemplazar la fecha por una fecha ISO 8601 distinta:
-
-```bash
-set -o pipefail
-airflow dags test "$DAG_ID" "2026-11-06T00:01:00+00:00" 2>&1 | tee semana3-recuperacion.log
-```
-
-Completar con los task IDs, el log literal, las tareas downstream omitidas y
-la salida de ambas ejecuciones. La estrategia propuesta está pendiente en
+El fallo se resolvió al habilitar la ingestión y dejar que Spark materializara
+las capas; no fue necesario modificar el DAG. Reparto raw observado:
+p0=1193, p1=2205, p2=365. Ver la estrategia y sus trade-offs en
 [ADR-003](../decisions/ADR-003-orquestacion-y-recuperacion.md).
+
+**Reproducción segura:** no vaciar ni borrar el Data Lake compartido. Se puede
+usar una ruta aislada para el fallo y después correr la recuperación con la
+ruta normal (PowerShell):
+
+```powershell
+$failDate = (Get-Date).ToUniversalTime().AddMinutes(-2).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+docker compose exec -T -e DATALAKE_PATH=/tmp/rapidgo-empty airflow airflow dags test rapidgo_observability_pipeline $failDate
+docker compose up -d --build airflow
+docker compose exec -d spark /opt/spark/bin/spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3 --conf spark.jars.ivy=/tmp/.ivy /opt/app/spark/streaming_job.py
+python -m producer.rapidgo_producer --rate 20 --duration 210 --incident-every 0
+$recoveryDate = (Get-Date).ToUniversalTime().AddMinutes(-1).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+docker compose exec airflow airflow dags test rapidgo_observability_pipeline $recoveryDate
+```
+
+La corrida fallida devuelve código 1 por diseño. Esperar a que existan Parquet
+en las tres capas antes de iniciar la corrida de recuperación.
