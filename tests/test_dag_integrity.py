@@ -1,5 +1,6 @@
 """Pruebas de integridad del DAG. Se saltan si Airflow no esta instalado;
 se activan solo cuando el CI instala apache-airflow."""
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,7 @@ from airflow.models import DagBag  # noqa: E402
 
 DAGS_DIR = Path(__file__).resolve().parents[1] / "airflow" / "dags"
 DAG_ID = "rapidgo_observability_pipeline"
+sys.path.insert(0, str(DAGS_DIR))
 
 
 @pytest.fixture(scope="module")
@@ -40,3 +42,8 @@ def test_dependencies(dag_bag):
         "check_sources", "quality_check", "partition_distribution",
         "aggregate_kpis", "evaluate_alerts",
     }
+
+
+def test_tasks_expose_results_through_xcom(dag_bag):
+    dag = dag_bag.dags[DAG_ID]
+    assert all(task.do_xcom_push for task in dag.tasks)
