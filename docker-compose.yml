@@ -55,3 +55,17 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_TOPIC: rapidgo.observability.events
+
+  airflow:
+    build: ./airflow
+    image: rapidgo-airflow:2.10.5
+    container_name: rapidgo-airflow
+    command: standalone
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      DATALAKE_PATH: /opt/airflow/datalake
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./datalake:/opt/airflow/datalake
