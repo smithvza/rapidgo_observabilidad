@@ -36,3 +36,20 @@ jobs:
         run: pytest -v
       - name: Validate Docker Compose configuration
         run: docker compose config --quiet
+  dag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Airflow test dependencies
+        run: |
+          python -m pip install "apache-airflow==2.10.5" \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.12.txt"
+          python -m pip install pytest
+      - name: Validate Airflow DAG
+        run: python -m pytest -v tests/test_dag_integrity.py

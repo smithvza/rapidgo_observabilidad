@@ -40,3 +40,8 @@ def test_dependencies(dag_bag):
         "check_sources", "quality_check", "partition_distribution",
         "aggregate_kpis", "evaluate_alerts",
     }
+
+
+def test_tasks_expose_results_through_xcom(dag_bag):
+    dag = dag_bag.dags[DAG_ID]
+    assert all(task.do_xcom_push for task in dag.tasks)
