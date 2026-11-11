@@ -38,5 +38,5 @@ TRIGGER_INTERVAL = "30 seconds"
 # --- KPIs y alertas (docs/kpis-alertas.md) --------------------------------
 ERROR_STATUS_FROM = 500           # http_status >= 500 cuenta como fallo
 ERROR_RATE_THRESHOLD = 0.05       # alerta 1: error rate > 5 %
-P95_LATENCY_THRESHOLD_MS = 800    # alerta 2: p95 > 800 ms
+P95_LATENCY_THRESHOLD_MS = 1000   # alerta 2: p95 > 1000 ms (docs/kpis-alertas.md)
 MIN_EVENTS_PER_WINDOW = 20        # muestra minima para evitar falsos positivos

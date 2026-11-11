@@ -45,10 +45,17 @@ services:
   spark:
     image: apache/spark:3.5.3
     container_name: rapidgo-spark
+    restart: unless-stopped
     depends_on:
-      kafka:
-        condition: service_healthy
-    command: ["tail", "-f", "/dev/null"]
+      kafka-init:
+        condition: service_completed_successfully
+    command:
+      - /opt/spark/bin/spark-submit
+      - --packages
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3
+      - --conf
+      - spark.jars.ivy=/tmp/.ivy
+      - /opt/app/spark/streaming_job.py
     volumes:
       - ./spark:/opt/app/spark
       - ./datalake:/opt/app/datalake
@@ -60,12 +67,40 @@ services:
     build: ./airflow
     image: rapidgo-airflow:2.10.5
     container_name: rapidgo-airflow
+    restart: unless-stopped
     command: standalone
     ports:
       - "8080:8080"
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
       DATALAKE_PATH: /opt/airflow/datalake
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./datalake:/opt/airflow/datalake
+
+  producer:
+    build: ./producer
+    image: rapidgo-producer:1.0
+    container_name: rapidgo-producer
+    restart: on-failure
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: rapidgo.observability.events
+    command:
+      - python
+      - -m
+      - producer.rapidgo_producer
+      - --rate
+      - "20"
+      - --incident-every
+      - "120"

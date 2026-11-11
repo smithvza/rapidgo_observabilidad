@@ -1,0 +1,9 @@
+﻿[OK] Contenedores en ejecucion - kafka, spark, airflow, producer
+[OK] Topic de Kafka - rapidgo.observability.events con 3 particiones (esperadas 3)
+[OK] Eventos en Kafka - offsets por particion {0: 6326, 1: 12937, 2: 2175}, total 21438
+[OK] Data Lake (raw, processed, curated) - raw: 108 archivos, ultimo hace 0.1 min; processed: 108 archivos, ultimo hace 0.1 min; curated: 61 archivos, ultimo hace 0.1 min
+[OK] Airflow responde
+[OK] DAG rapidgo_observability_pipeline - las 6 tareas terminaron en success
+[OK] Reporte generado - datalake\reports\latest.md
+
+RESULTADO: pipeline completo funcionando
