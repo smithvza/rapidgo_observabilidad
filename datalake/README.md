@@ -1,4 +1,4 @@
-# rapidgo_observabilidad# Data Lake - RapidGo Observabilidad
+# Data Lake - RapidGo Observabilidad
 
 Estructura por capas del Data Lake del pipeline:
 
