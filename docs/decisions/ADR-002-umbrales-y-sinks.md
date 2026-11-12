@@ -1,8 +1,7 @@
 # ADR-002 - Umbrales de alertas y sinks de parquet
 
-**Estado:** Aceptada por consistencia del código y la documentación (rama `fix-consistencia-umbrales`, commit `721d3e5`)
-**Fecha real del cambio:** Thu Nov 5 19:27:35 2026 -0500
-**Responsable:** CamilosolerB
+**Estado:** Aceptada e integrada en `main` mediante el PR #36
+**Evidencia de integración:** commit `e03b559` (`2026-11-10T19:29:12-05:00`)
 
 ## Contexto / problema
 
@@ -25,23 +24,26 @@ Además, el job de Spark escribe tres capas de salida con checkpoint propio y wa
 - Watermark: `2 minutes` (`WATERMARK = "2 minutes"`).
 - Sinks: cada capa genera un `writeStream(...).outputMode("append")` con `checkpointLocation` propio.
 
-La decisión quedó consolidada en el commit:
+La alineación del umbral de p95 se integró en el siguiente cambio:
 
-- `721d3e5` — `fix: unificar umbrales de alertas`
+- `e03b559` — `feat: integracion y estabilizacion del pipeline completo (producer y spark en compose, umbral p95 alineado, smoke test, guia local)`, integrado por el PR #36.
 
 ## Evidencia utilizada
 
 La evidencia real del repo es la siguiente:
 
-- `spark/config.py` en la rama `fix-consistencia-umbrales`:
+- El commit `e03b559` cambió `P95_LATENCY_THRESHOLD_MS` de 800 a 1000 ms en `spark/config.py`.
+- El estado integrado de `spark/config.py` declara:
   - `ERROR_RATE_THRESHOLD = 0.05`
   - `P95_LATENCY_THRESHOLD_MS = 1000`
   - `MIN_EVENTS_PER_WINDOW = 20`
   - `WINDOW_DURATION = "1 minute"`
   - `WATERMARK = "2 minutes"`
+- `tests/test_config_consistency.py` comprueba que los umbrales de `spark/config.py` coincidan con `spark/rules.py`.
 - `spark/streaming_job.py` usa agregación por window + `service` y escribe en `raw`, `processed` y `curated` con checkpoint propio.
 - `tests/test_rules.py` valida que la alerta de error no dispara en un 5 % exacto y que el p95 crítico dispara solo en `> 1000 ms`.
-- `docs/kpis-alertas.md` fue corregido para reflejar la misma lógica, y no se modificó el job.
+- `docs/evidencia/latest_semana4.md` contiene ejecuciones de alertas por servicio con umbral 0.05 y 1000 ms; `docs/evidencia/smoke_test_semana4.txt` registra la validación del pipeline completo.
+- `airflow/dags/rapidgo_checks.py` define los mismos umbrales de error y p95 y el mínimo de 20 eventos; `docs/kpis-alertas.md` refleja la agrupación por servicio.
 
 ## Consecuencias / trade-offs
 
