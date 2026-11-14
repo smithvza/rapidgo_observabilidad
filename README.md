@@ -164,7 +164,7 @@ Los números anteriores se verificaron en issues/PR del repositorio, y las tres 
 
 ## 13. Video final
 
-PENDIENTE: enlace al video.
+PENDIENTE: https://youtu.be/yHc_J0cOpgo
 
 El release `v1.0.0` está preparado en [las notas de release](docs/release-notes-v1.0.0.md), pero el tag aún no existe y no debe anunciarse como publicado hasta que se cumplan las precondiciones del equipo.
 
